@@ -38,7 +38,7 @@ The application strictly adheres to a **3-Page Information Architecture**:
 
 ### Prerequisites
 
-- **Node.js**: v18.0.0 or higher
+- **Node.js**: v20.0.0 or higher (required for Vite 8 / Tailwind v4)
 - **npm**: v9.0.0 or higher
 
 ### Installation

@@ -12,7 +12,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [18.x, 20.x, 22.x]
+        node-version: [20.x, 22.x]
 
     steps:
       - uses: actions/checkout@v4
@@ -21,18 +21,17 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          cache: 'npm'
 
-      - name: Install Root & Server Dependencies
+      - name: Install Root Dependencies
+        run: npm install
+
+      - name: Install & Test Server
         run: |
+          cd server
           npm install
-          cd server && npm install
+          node src/__tests__/business.test.js
 
-      - name: Run Server Business Rules Unit Tests
-        run: |
-          node server/src/__tests__/business.test.js
-
-      - name: Install Client Dependencies & Build Frontend
+      - name: Install & Build Client
         run: |
           cd client
           npm install
