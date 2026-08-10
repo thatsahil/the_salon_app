@@ -14,5 +14,21 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('recharts')) return 'recharts';
+            if (id.includes('lucide-react')) return 'icons';
+            return 'vendor';
+          }
+        },
+      },
+    },
+  },
 })
+
+
 
