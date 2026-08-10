@@ -34,6 +34,62 @@ The application strictly adheres to a **3-Page Information Architecture**:
 
 ---
 
+## 📁 Project File Structure
+
+```text
+the_salon_app/
+├── .github/
+│   └── workflows/
+│       └── ci.yml                 # GitHub Actions CI workflow (Node 20/22)
+├── client/                        # Frontend (Vite + React + Tailwind CSS v4)
+│   ├── public/                    # Static public assets
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── clients/           # ClientList, ClientCard, ClientProfileModal, ClientForm, VisitForm
+│   │   │   ├── common/            # Button, Input, Modal, EmptyState, LoadingState
+│   │   │   ├── dashboard/         # QuickStats, QuickActions, AlertList
+│   │   │   ├── layout/            # AppShell, TopBar, BottomNav
+│   │   │   └── reports/           # InsightCards, RevenueChart, PaymentSummary
+│   │   ├── pages/
+│   │   │   ├── Clients.jsx        # Customer database & search page
+│   │   │   ├── Dashboard.jsx      # Daily command center & alerts page
+│   │   │   └── Reports.jsx        # Revenue analytics & charts page
+│   │   ├── services/
+│   │   │   └── api.js             # Fetch API service wrapper for REST endpoints
+│   │   ├── utils/
+│   │   │   ├── currency.js        # Indian Rupee (₹) formatting helper
+│   │   │   ├── date.js            # Display date & ISO string helpers
+│   │   │   └── phone.js           # Phone normalization & WhatsApp link generator
+│   │   ├── App.jsx                # Main application component & state manager
+│   │   ├── index.css              # Tailwind v4 configuration & Google Fonts
+│   │   └── main.jsx               # React DOM entry point
+│   ├── index.html                 # App HTML entry document
+│   ├── package.json               # Client dependencies & scripts
+│   └── vite.config.js             # Vite configuration & Rollup code-splitting
+├── server/                        # Backend (Node.js + Express + Mongoose)
+│   ├── src/
+│   │   ├── __tests__/             # Business rules & reminder logic unit tests
+│   │   ├── config/                # Database connection & in-memory fallback store
+│   │   ├── controllers/           # Auth, Client, Dashboard, Report, Service controllers
+│   │   ├── middleware/            # JWT authentication & error handling middleware
+│   │   ├── models/                # User, Customer, Visit, Service Mongoose models
+│   │   ├── routes/                # Express API routes
+│   │   ├── services/              # Customer, Reminder, Revenue business services
+│   │   ├── utils/                 # Server date calculations & phone normalization
+│   │   ├── app.js                 # Express application setup & middleware configuration
+│   │   └── server.js              # HTTP server entry point
+│   ├── .env.example               # Backend environment variables template
+│   └── package.json               # Server dependencies & scripts
+├── documentation/                 # Original project PRD & specifications
+├── .editorconfig                  # Code style configuration
+├── .gitignore                     # Git ignored files & directories
+├── LICENSE                        # MIT License
+├── package.json                   # Root scripts for running client & server concurrently
+└── README.md                      # Project documentation
+```
+
+---
+
 ## 🚀 Getting Started
 
 ### Prerequisites
