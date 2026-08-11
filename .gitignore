@@ -30,8 +30,5 @@ Thumbs.db
 .idea/
 coverage/
 
-# Documentation files
-documentation/
-prd_content.txt
-*.docx
-
+#Documents
+/documentation 
