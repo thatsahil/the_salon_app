@@ -11,9 +11,21 @@ const serviceRoutes = require('./routes/service.routes');
 const app = express();
 
 // Middlewares
+const getCorsOrigins = () => {
+  const defaultOrigins = [
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'http://localhost:4173',
+  ];
+  if (!process.env.CLIENT_URL) return '*';
+
+  const cleanUrl = process.env.CLIENT_URL.trim().replace(/\/+$/, '');
+  return [...defaultOrigins, cleanUrl, `${cleanUrl}/`];
+};
+
 const corsOptions = {
-  origin: process.env.CLIENT_URL ? [process.env.CLIENT_URL, 'http://localhost:5173'] : '*',
-  credentials: true
+  origin: getCorsOrigins(),
+  credentials: true,
 };
 app.use(cors(corsOptions));
 app.use(express.json());
