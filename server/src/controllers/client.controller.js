@@ -4,25 +4,35 @@ const { memoryStore, getIsConnected } = require('./store');
 const { normalizePhone } = require('../utils/phone');
 const { formatDate, calculateNextReminderDate } = require('../utils/date');
 
-// Search and list clients
+// Search and list clients for logged in admin
 exports.getClients = async (req, res) => {
   try {
     const { query } = req.query;
+    const adminId = req.user.id || req.user.userId;
     let customers = [];
 
     if (getIsConnected()) {
-      let filter = { isActive: true };
+      let filter = { adminId, isActive: true };
       if (query && query.trim()) {
         const q = query.trim();
         const normQ = normalizePhone(q);
-        filter.$or = [
-          { name: { $regex: q, $options: 'i' } },
-          { phoneNumber: { $regex: normQ || q, $options: 'i' } },
+        filter.$and = [
+          { adminId, isActive: true },
+          {
+            $or: [
+              { name: { $regex: q, $options: 'i' } },
+              { phoneNumber: { $regex: normQ || q, $options: 'i' } },
+            ],
+          },
         ];
+        delete filter.adminId;
+        delete filter.isActive;
       }
       customers = await Customer.find(filter).sort({ name: 1 }).lean();
     } else {
-      customers = memoryStore.customers.filter((c) => c.isActive);
+      customers = memoryStore.customers.filter(
+        (c) => String(c.adminId) === String(adminId) && c.isActive
+      );
       if (query && query.trim()) {
         const q = query.trim().toLowerCase();
         const normQ = normalizePhone(q);
@@ -47,19 +57,24 @@ exports.getClients = async (req, res) => {
 exports.getClientById = async (req, res) => {
   try {
     const { id } = req.params;
+    const adminId = req.user.id || req.user.userId;
     let customer = null;
     let visits = [];
 
     if (getIsConnected()) {
-      customer = await Customer.findById(id).lean();
+      customer = await Customer.findOne({ _id: id, adminId }).lean();
       if (customer) {
-        visits = await Visit.find({ customerId: id }).sort({ visitDate: -1, createdAt: -1 }).lean();
+        visits = await Visit.find({ customerId: id, adminId }).sort({ visitDate: -1, createdAt: -1 }).lean();
       }
     } else {
-      customer = memoryStore.customers.find((c) => c._id === id);
+      customer = memoryStore.customers.find(
+        (c) => String(c._id) === String(id) && String(c.adminId) === String(adminId)
+      );
       if (customer) {
         visits = memoryStore.visits
-          .filter((v) => String(v.customerId) === String(id))
+          .filter(
+            (v) => String(v.customerId) === String(id) && String(v.adminId) === String(adminId)
+          )
           .sort((a, b) => new Date(b.visitDate) - new Date(a.visitDate));
       }
     }
@@ -81,10 +96,11 @@ exports.getClientById = async (req, res) => {
   }
 };
 
-// Create or return existing client by unique phone number
+// Create or return existing client by unique phone number for current admin
 exports.createClient = async (req, res) => {
   try {
     const { name, phoneNumber, notes, preferredService } = req.body;
+    const adminId = req.user.id || req.user.userId;
 
     if (!name || !name.trim()) {
       return res.status(400).json({ success: false, message: 'Client name is required' });
@@ -96,8 +112,7 @@ exports.createClient = async (req, res) => {
     }
 
     if (getIsConnected()) {
-      // Check if existing phone number exists
-      let existing = await Customer.findOne({ phoneNumber: normPhone });
+      let existing = await Customer.findOne({ phoneNumber: normPhone, adminId });
       if (existing) {
         return res.json({
           success: true,
@@ -108,6 +123,7 @@ exports.createClient = async (req, res) => {
       }
 
       const newCustomer = await Customer.create({
+        adminId,
         name: name.trim(),
         phoneNumber: normPhone,
         notes: notes || '',
@@ -126,7 +142,9 @@ exports.createClient = async (req, res) => {
         data: newCustomer,
       });
     } else {
-      let existing = memoryStore.customers.find((c) => c.phoneNumber === normPhone);
+      let existing = memoryStore.customers.find(
+        (c) => c.phoneNumber === normPhone && String(c.adminId) === String(adminId)
+      );
       if (existing) {
         return res.json({
           success: true,
@@ -138,6 +156,7 @@ exports.createClient = async (req, res) => {
 
       const newCustomer = {
         _id: 'cust_' + Date.now(),
+        adminId: String(adminId),
         name: name.trim(),
         phoneNumber: normPhone,
         notes: notes || '',
@@ -169,20 +188,24 @@ exports.updateClient = async (req, res) => {
   try {
     const { id } = req.params;
     const { name, phoneNumber, notes, preferredService } = req.body;
+    const adminId = req.user.id || req.user.userId;
 
     let normPhone = phoneNumber ? normalizePhone(phoneNumber) : undefined;
 
     if (getIsConnected()) {
       if (normPhone) {
-        // Ensure phone uniqueness across other clients
-        const duplicate = await Customer.findOne({ phoneNumber: normPhone, _id: { $ne: id } });
+        const duplicate = await Customer.findOne({
+          phoneNumber: normPhone,
+          adminId,
+          _id: { $ne: id },
+        });
         if (duplicate) {
           return res.status(400).json({ success: false, message: 'Another client already uses this phone number' });
         }
       }
 
-      const updated = await Customer.findByIdAndUpdate(
-        id,
+      const updated = await Customer.findOneAndUpdate(
+        { _id: id, adminId },
         {
           ...(name && { name: name.trim() }),
           ...(normPhone && { phoneNumber: normPhone }),
@@ -198,13 +221,17 @@ exports.updateClient = async (req, res) => {
 
       return res.json({ success: true, data: updated });
     } else {
-      const idx = memoryStore.customers.findIndex((c) => c._id === id);
+      const idx = memoryStore.customers.findIndex(
+        (c) => String(c._id) === String(id) && String(c.adminId) === String(adminId)
+      );
       if (idx === -1) {
         return res.status(404).json({ success: false, message: 'Client not found' });
       }
 
       if (normPhone) {
-        const dup = memoryStore.customers.find((c) => c.phoneNumber === normPhone && c._id !== id);
+        const dup = memoryStore.customers.find(
+          (c) => c.phoneNumber === normPhone && String(c.adminId) === String(adminId) && String(c._id) !== String(id)
+        );
         if (dup) {
           return res.status(400).json({ success: false, message: 'Another client already uses this phone number' });
         }
@@ -224,11 +251,56 @@ exports.updateClient = async (req, res) => {
   }
 };
 
+// Delete client & associated visits
+exports.deleteClient = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const adminId = req.user.id || req.user.userId;
+
+    if (getIsConnected()) {
+      const deletedCustomer = await Customer.findOneAndDelete({ _id: id, adminId });
+      if (!deletedCustomer) {
+        return res.status(404).json({ success: false, message: 'Client not found' });
+      }
+
+      // Delete associated visits for this client
+      await Visit.deleteMany({ customerId: id, adminId });
+
+      return res.json({
+        success: true,
+        message: 'Client and all visit history deleted successfully',
+      });
+    } else {
+      const idx = memoryStore.customers.findIndex(
+        (c) => String(c._id) === String(id) && String(c.adminId) === String(adminId)
+      );
+      if (idx === -1) {
+        return res.status(404).json({ success: false, message: 'Client not found' });
+      }
+
+      memoryStore.customers.splice(idx, 1);
+      // Remove visits
+      memoryStore.visits = memoryStore.visits.filter(
+        (v) => !(String(v.customerId) === String(id) && String(v.adminId) === String(adminId))
+      );
+
+      return res.json({
+        success: true,
+        message: 'Client and all visit history deleted successfully',
+      });
+    }
+  } catch (err) {
+    console.error('deleteClient error:', err);
+    return res.status(500).json({ success: false, message: 'Failed to delete client' });
+  }
+};
+
 // Create Visit for client and recalculate nextReminderDate
 exports.createVisit = async (req, res) => {
   try {
     const { id } = req.params; // customerId
     const { serviceName, amount, paymentMethod, visitDate, notes } = req.body;
+    const adminId = req.user.id || req.user.userId;
 
     if (!serviceName || amount === undefined || amount === null) {
       return res.status(400).json({ success: false, message: 'Service name and amount are required' });
@@ -240,13 +312,14 @@ exports.createVisit = async (req, res) => {
     const pMethod = paymentMethod === 'online' ? 'online' : 'cash';
 
     if (getIsConnected()) {
-      const customer = await Customer.findById(id);
+      const customer = await Customer.findOne({ _id: id, adminId });
       if (!customer) {
         return res.status(404).json({ success: false, message: 'Client not found' });
       }
 
       // Record Visit
       const newVisit = await Visit.create({
+        adminId,
         customerId: id,
         visitDate: vDate,
         serviceName,
@@ -255,7 +328,7 @@ exports.createVisit = async (req, res) => {
         notes: notes || '',
       });
 
-      // Update Customer record (Early visit supersedes old reminder date)
+      // Update Customer record
       customer.lastVisitDate = vDate;
       customer.nextReminderDate = nextReminder;
       customer.totalVisits = (customer.totalVisits || 0) + 1;
@@ -271,13 +344,16 @@ exports.createVisit = async (req, res) => {
         },
       });
     } else {
-      const customer = memoryStore.customers.find((c) => c._id === id);
+      const customer = memoryStore.customers.find(
+        (c) => String(c._id) === String(id) && String(c.adminId) === String(adminId)
+      );
       if (!customer) {
         return res.status(404).json({ success: false, message: 'Client not found' });
       }
 
       const newVisit = {
         _id: 'vis_' + Date.now(),
+        adminId: String(adminId),
         customerId: id,
         visitDate: vDate,
         serviceName,

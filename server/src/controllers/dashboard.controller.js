@@ -7,16 +7,21 @@ const revenueService = require('../services/revenue.service');
 
 exports.getDashboard = async (req, res) => {
   try {
+    const adminId = req.user.id || req.user.userId;
     const todayStr = formatDate(new Date());
     let customers = [];
     let visits = [];
 
     if (getIsConnected()) {
-      customers = await Customer.find({ isActive: true }).lean();
-      visits = await Visit.find().lean();
+      customers = await Customer.find({ adminId, isActive: true }).lean();
+      visits = await Visit.find({ adminId }).lean();
     } else {
-      customers = memoryStore.customers.filter((c) => c.isActive);
-      visits = memoryStore.visits;
+      customers = memoryStore.customers.filter(
+        (c) => String(c.adminId) === String(adminId) && c.isActive
+      );
+      visits = memoryStore.visits.filter(
+        (v) => String(v.adminId) === String(adminId)
+      );
     }
 
     // Filter customers due today for alerts

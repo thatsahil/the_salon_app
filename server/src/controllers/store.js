@@ -29,15 +29,16 @@ const memoryStore = {
     },
   ],
   services: [
-    { _id: 'srv_1', name: 'Haircut & Styling', price: 450, isActive: true },
-    { _id: 'srv_2', name: 'Beard Trim & Shape', price: 250, isActive: true },
-    { _id: 'srv_3', name: 'Hair Color & Spa', price: 1200, isActive: true },
-    { _id: 'srv_4', name: 'Refreshing Facial', price: 800, isActive: true },
-    { _id: 'srv_5', name: 'Head Massage', price: 350, isActive: true },
+    { _id: 'srv_1', adminId: 'user_1', name: 'Haircut & Styling', price: 450, isActive: true },
+    { _id: 'srv_2', adminId: 'user_1', name: 'Beard Trim & Shape', price: 250, isActive: true },
+    { _id: 'srv_3', adminId: 'user_1', name: 'Hair Color & Spa', price: 1200, isActive: true },
+    { _id: 'srv_4', adminId: 'user_1', name: 'Refreshing Facial', price: 800, isActive: true },
+    { _id: 'srv_5', adminId: 'user_1', name: 'Head Massage', price: 350, isActive: true },
   ],
   customers: [
     {
       _id: 'cust_1',
+      adminId: 'user_1',
       name: 'Aria Sterling',
       phoneNumber: '9876543210',
       notes: 'Prefers ammonia-free hair color',
@@ -51,6 +52,7 @@ const memoryStore = {
     },
     {
       _id: 'cust_2',
+      adminId: 'user_1',
       name: 'Marcus Reed',
       phoneNumber: '9823011223',
       notes: 'Fade haircut level 2',
@@ -64,6 +66,7 @@ const memoryStore = {
     },
     {
       _id: 'cust_3',
+      adminId: 'user_1',
       name: 'Elena Vance',
       phoneNumber: '9988776655',
       notes: 'Regular monthly facial client',
@@ -77,6 +80,7 @@ const memoryStore = {
     },
     {
       _id: 'cust_4',
+      adminId: 'user_1',
       name: 'Julian Thorne',
       phoneNumber: '9123456789',
       notes: 'Prefers weekend appointments',
@@ -92,6 +96,7 @@ const memoryStore = {
   visits: [
     {
       _id: 'vis_1',
+      adminId: 'user_1',
       customerId: 'cust_2',
       visitDate: todayStr,
       serviceName: 'Haircut & Styling',
@@ -102,6 +107,7 @@ const memoryStore = {
     },
     {
       _id: 'vis_2',
+      adminId: 'user_1',
       customerId: 'cust_4',
       visitDate: offsetDateStr(-5),
       serviceName: 'Beard Trim & Shape',
@@ -112,6 +118,7 @@ const memoryStore = {
     },
     {
       _id: 'vis_3',
+      adminId: 'user_1',
       customerId: 'cust_1',
       visitDate: offsetDateStr(-30),
       serviceName: 'Hair Color & Spa',

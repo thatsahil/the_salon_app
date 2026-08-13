@@ -7,6 +7,7 @@ router.get('/', authMiddleware, clientController.getClients);
 router.post('/', authMiddleware, clientController.createClient);
 router.get('/:id', authMiddleware, clientController.getClientById);
 router.put('/:id', authMiddleware, clientController.updateClient);
+router.delete('/:id', authMiddleware, clientController.deleteClient);
 router.post('/:id/visits', authMiddleware, clientController.createVisit);
 
 module.exports = router;

@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 
 const visitSchema = new mongoose.Schema(
   {
+    adminId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer', required: true, index: true },
     visitDate: { type: String, required: true, index: true },
     serviceName: { type: String, required: true },

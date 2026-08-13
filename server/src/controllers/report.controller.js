@@ -6,18 +6,21 @@ const revenueService = require('../services/revenue.service');
 exports.getRevenueReport = async (req, res) => {
   try {
     const period = req.query.period === 'weekly' ? 'weekly' : 'monthly';
+    const offset = parseInt(req.query.offset, 10) || 0;
+    const adminId = req.user.id || req.user.userId;
+
     let visits = [];
     let customers = [];
 
     if (getIsConnected()) {
-      visits = await Visit.find().lean();
-      customers = await Customer.find().lean();
+      visits = await Visit.find({ adminId }).lean();
+      customers = await Customer.find({ adminId }).lean();
     } else {
-      visits = memoryStore.visits;
-      customers = memoryStore.customers;
+      visits = memoryStore.visits.filter((v) => String(v.adminId) === String(adminId));
+      customers = memoryStore.customers.filter((c) => String(c.adminId) === String(adminId));
     }
 
-    const report = revenueService.calculateReportMetrics(visits, customers, period);
+    const report = revenueService.calculateReportMetrics(visits, customers, period, offset);
 
     return res.json({
       success: true,

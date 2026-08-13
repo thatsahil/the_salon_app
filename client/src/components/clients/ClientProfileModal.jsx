@@ -4,13 +4,22 @@ import { Button } from '../common/Button';
 import { formatDisplayDate } from '../../utils/date';
 import { formatCurrency } from '../../utils/currency';
 import { formatPhoneDisplay, getWhatsAppReminderUrl } from '../../utils/phone';
-import { Phone, Calendar, IndianRupee, History, PlusCircle, Edit3, Send } from 'lucide-react';
+import { Phone, Calendar, IndianRupee, History, PlusCircle, Edit3, Send, Trash2, AlertTriangle } from 'lucide-react';
 
-export function ClientProfileModal({ isOpen, onClose, client, onRecordVisit, onEditClient }) {
+export function ClientProfileModal({ isOpen, onClose, client, onRecordVisit, onEditClient, onDeleteClient }) {
+  const [showConfirmDelete, setShowConfirmDelete] = React.useState(false);
+
   if (!client) return null;
 
   const visits = client.visits || [];
   const waUrl = getWhatsAppReminderUrl(client.phoneNumber, client.name);
+
+  const handleDelete = () => {
+    if (onDeleteClient) {
+      onDeleteClient(client);
+      setShowConfirmDelete(false);
+    }
+  };
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Client Profile" maxWidth="max-w-lg">
@@ -35,14 +44,50 @@ export function ClientProfileModal({ isOpen, onClose, client, onRecordVisit, onE
             </div>
           </div>
 
-          <button
-            onClick={() => onEditClient(client)}
-            className="p-2 rounded-xl text-[#585990] bg-white hover:bg-[#e5eeff] border border-[#d3e4fe] transition-colors"
-            title="Edit Client"
-          >
-            <Edit3 className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => onEditClient(client)}
+              className="p-2 rounded-xl text-[#585990] bg-white hover:bg-[#e5eeff] border border-[#d3e4fe] transition-colors"
+              title="Edit Client"
+            >
+              <Edit3 className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setShowConfirmDelete(true)}
+              className="p-2 rounded-xl text-red-600 bg-white hover:bg-red-50 border border-red-200 transition-colors"
+              title="Delete Client"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
         </div>
+
+        {/* Delete Confirmation Box */}
+        {showConfirmDelete && (
+          <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-xs flex flex-col gap-2.5 animate-fade-in">
+            <div className="flex items-center gap-2 text-red-800 font-bold">
+              <AlertTriangle className="w-4 h-4 text-red-600" />
+              <span>Delete Client Record?</span>
+            </div>
+            <p className="text-red-700 leading-relaxed">
+              Are you sure you want to delete <strong className="font-bold">{client.name}</strong>? This action cannot be undone and will permanently remove all their visit history.
+            </p>
+            <div className="flex items-center justify-end gap-2 mt-1">
+              <button
+                onClick={() => setShowConfirmDelete(false)}
+                className="px-3 py-1.5 rounded-xl bg-white border border-red-200 text-red-800 text-xs font-semibold hover:bg-red-100/50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                className="px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-xs transition-colors"
+              >
+                Yes, Delete Client
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Notes if present */}
         {client.notes && (

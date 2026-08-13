@@ -35,7 +35,10 @@ async function request(endpoint, options = {}) {
 
 export const api = {
   // Auth
-  login: (email, password) => request('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
+  signup: (name, email, password, salonName) =>
+    request('/auth/signup', { method: 'POST', body: JSON.stringify({ name, email, password, salonName }) }),
+  login: (email, password) =>
+    request('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
   getMe: () => request('/auth/me'),
 
   // Dashboard
@@ -46,13 +49,15 @@ export const api = {
   getClientById: (id) => request(`/clients/${id}`),
   createClient: (clientData) => request('/clients', { method: 'POST', body: JSON.stringify(clientData) }),
   updateClient: (id, clientData) => request(`/clients/${id}`, { method: 'PUT', body: JSON.stringify(clientData) }),
+  deleteClient: (id) => request(`/clients/${id}`, { method: 'DELETE' }),
 
   // Visits
   createVisit: (customerId, visitData) =>
     request(`/clients/${customerId}/visits`, { method: 'POST', body: JSON.stringify(visitData) }),
 
   // Reports
-  getRevenueReport: (period = 'monthly') => request(`/reports/revenue?period=${period}`),
+  getRevenueReport: (period = 'monthly', offset = 0) =>
+    request(`/reports/revenue?period=${period}&offset=${offset}`),
 
   // Services
   getServices: () => request('/services'),

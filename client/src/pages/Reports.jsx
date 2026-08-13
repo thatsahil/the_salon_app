@@ -7,15 +7,21 @@ import { api } from '../services/api';
 
 export function Reports() {
   const [period, setPeriod] = useState('monthly');
+  const [offset, setOffset] = useState(0);
   const [reportData, setReportData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  const handlePeriodChange = (newPeriod) => {
+    setPeriod(newPeriod);
+    setOffset(0);
+  };
 
   useEffect(() => {
     async function fetchReport() {
       setLoading(true);
       try {
-        const res = await api.getRevenueReport(period);
+        const res = await api.getRevenueReport(period, offset);
         if (res.success) {
           setReportData(res.data);
         }
@@ -26,7 +32,7 @@ export function Reports() {
       }
     }
     fetchReport();
-  }, [period]);
+  }, [period, offset]);
 
   if (loading && !reportData) {
     return <LoadingState message="Calculating revenue insights & charts..." />;
@@ -40,6 +46,7 @@ export function Reports() {
     totalVisitsCount = 0,
     averageBill = 0,
     newClientsCount = 0,
+    periodLabel = '',
   } = reportData || {};
 
   return (
@@ -62,7 +69,16 @@ export function Reports() {
       />
 
       {/* Recharts Revenue Chart */}
-      <RevenueChart data={chartData} period={period} setPeriod={setPeriod} />
+      <RevenueChart
+        data={chartData}
+        period={period}
+        setPeriod={handlePeriodChange}
+        offset={offset}
+        onPrev={() => setOffset((prev) => prev - 1)}
+        onNext={() => setOffset((prev) => prev + 1)}
+        onResetOffset={() => setOffset(0)}
+        periodLabel={periodLabel}
+      />
 
       {/* Cash vs Online Payment Summary */}
       <PaymentSummary

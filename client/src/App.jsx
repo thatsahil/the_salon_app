@@ -6,17 +6,20 @@ import { Reports } from './pages/Reports';
 import { ClientForm } from './components/clients/ClientForm';
 import { VisitForm } from './components/clients/VisitForm';
 import { ClientProfileModal } from './components/clients/ClientProfileModal';
+import { AuthScreen } from './components/auth/AuthScreen';
+import { LoadingState } from './components/common/LoadingState';
 import { api } from './services/api';
 import { CheckCircle2, AlertCircle } from 'lucide-react';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [user, setUser] = useState({ name: 'Akshay Kumar', salonName: 'Serene Salon & Studio' });
+  const [user, setUser] = useState(null);
+  const [authChecking, setAuthChecking] = useState(true);
   const [dashboardData, setDashboardData] = useState(null);
   const [clients, setClients] = useState([]);
   const [services, setServices] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   // Modal States
   const [isClientFormOpen, setIsClientFormOpen] = useState(false);
@@ -33,7 +36,34 @@ export default function App() {
     setTimeout(() => setToast(null), 4000);
   };
 
+  // Check auth session on startup
+  useEffect(() => {
+    async function verifyAuth() {
+      const token = localStorage.getItem('salon_jwt_token');
+      if (!token) {
+        setAuthChecking(false);
+        return;
+      }
+
+      try {
+        const res = await api.getMe();
+        if (res.success && res.user) {
+          setUser(res.user);
+        } else {
+          localStorage.removeItem('salon_jwt_token');
+        }
+      } catch (err) {
+        localStorage.removeItem('salon_jwt_token');
+      } finally {
+        setAuthChecking(false);
+      }
+    }
+
+    verifyAuth();
+  }, []);
+
   const loadInitialData = useCallback(async () => {
+    if (!user) return;
     setLoading(true);
     try {
       const [dashRes, clientRes, srvRes] = await Promise.all([
@@ -50,14 +80,17 @@ export default function App() {
     } finally {
       setLoading(false);
     }
-  }, [searchQuery]);
+  }, [user, searchQuery]);
 
   useEffect(() => {
-    loadInitialData();
-  }, [loadInitialData]);
+    if (user) {
+      loadInitialData();
+    }
+  }, [user, loadInitialData]);
 
   // Handle Client Search
   useEffect(() => {
+    if (!user) return;
     const handler = setTimeout(async () => {
       try {
         const res = await api.getClients(searchQuery);
@@ -67,7 +100,7 @@ export default function App() {
       }
     }, 300);
     return () => clearTimeout(handler);
-  }, [searchQuery]);
+  }, [searchQuery, user]);
 
   // Open Profile Modal with details & visit history
   const handleSelectClient = async (client) => {
@@ -99,22 +132,41 @@ export default function App() {
 
   // Save Client (Add or Edit)
   const handleSaveClient = async (clientData) => {
-    if (clientToEdit) {
-      const res = await api.updateClient(clientToEdit._id, clientData);
-      if (res.success) {
-        showToast(`Updated client ${res.data.name}`);
-        loadInitialData();
-      }
-    } else {
-      const res = await api.createClient(clientData);
-      if (res.success) {
-        if (res.isExisting) {
-          showToast(`Client already exists! Opened existing record for ${res.data.name}`, 'info');
-        } else {
-          showToast(`Added new client ${res.data.name}`);
+    try {
+      if (clientToEdit) {
+        const res = await api.updateClient(clientToEdit._id, clientData);
+        if (res.success) {
+          showToast(`Updated client ${res.data.name}`);
+          loadInitialData();
         }
+      } else {
+        const res = await api.createClient(clientData);
+        if (res.success) {
+          if (res.isExisting) {
+            showToast(`Client already exists! Opened existing record for ${res.data.name}`, 'info');
+          } else {
+            showToast(`Added new client ${res.data.name}`);
+          }
+          loadInitialData();
+        }
+      }
+    } catch (err) {
+      showToast(err.message || 'Failed to save client', 'error');
+    }
+  };
+
+  // Delete Client
+  const handleDeleteClient = async (client) => {
+    try {
+      const res = await api.deleteClient(client._id);
+      if (res.success) {
+        showToast(`Deleted client ${client.name}`);
+        setIsProfileModalOpen(false);
+        setSelectedClient(null);
         loadInitialData();
       }
+    } catch (err) {
+      showToast(err.message || 'Failed to delete client', 'error');
     }
   };
 
@@ -127,13 +179,30 @@ export default function App() {
 
   // Record Visit
   const handleRecordVisit = async (customerId, visitData) => {
-    const res = await api.createVisit(customerId, visitData);
-    if (res.success) {
-      const custName = res.data.customer?.name || 'Client';
-      const remDate = res.data.customer?.nextReminderDate || '';
-      showToast(`Visit recorded for ${custName}! Next reminder set for ${remDate}`);
-      loadInitialData();
+    try {
+      const res = await api.createVisit(customerId, visitData);
+      if (res.success) {
+        const custName = res.data.customer?.name || 'Client';
+        const remDate = res.data.customer?.nextReminderDate || '';
+        showToast(`Visit recorded for ${custName}! Next reminder set for ${remDate}`);
+        loadInitialData();
+      }
+    } catch (err) {
+      showToast(err.message || 'Failed to record visit', 'error');
     }
+  };
+
+  // Log Out
+  const handleLogout = () => {
+    localStorage.removeItem('salon_jwt_token');
+    setUser(null);
+    setDashboardData(null);
+    setClients([]);
+  };
+
+  // Handle successful login/signup from AuthScreen
+  const handleLoginSuccess = (userData) => {
+    setUser(userData);
   };
 
   const getPageTitle = () => {
@@ -147,12 +216,21 @@ export default function App() {
     }
   };
 
+  if (authChecking) {
+    return <LoadingState message="Connecting to secure salon workspace..." />;
+  }
+
+  if (!user) {
+    return <AuthScreen onLoginSuccess={handleLoginSuccess} />;
+  }
+
   return (
     <AppShell
       activeTab={activeTab}
       setActiveTab={setActiveTab}
       title={getPageTitle()}
       user={user}
+      onLogout={handleLogout}
     >
       {/* Active Page View */}
       {activeTab === 'dashboard' && (
@@ -204,6 +282,7 @@ export default function App() {
         client={selectedClient}
         onRecordVisit={handleOpenVisitForm}
         onEditClient={handleOpenEditClient}
+        onDeleteClient={handleDeleteClient}
       />
 
       {/* Add/Edit Client Form Modal */}
