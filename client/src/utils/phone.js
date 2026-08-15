@@ -34,6 +34,7 @@ It's been a month since your last visit to *${salonName}* — we’d love to wel
 
 📅 Book your next visit at your convenience.
 📍 Find us here: ${locationUrl}
+
 📞 +91 72194 91949
 
 Looking forward to seeing you!
