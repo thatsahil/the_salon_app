@@ -6,15 +6,17 @@ export function TopBar({ title, activeTab, user, onLogout }) {
     <header className="fixed top-0 left-0 right-0 z-40 bg-[#f8f9ff]/80 backdrop-blur-xl border-b border-[#e2e8f0]/60 shadow-[0_1px_8px_rgba(0,0,0,0.03)]">
       <div className="max-w-4xl mx-auto h-16 px-4 sm:px-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#585990] to-[#8b8cc7] text-white flex items-center justify-center font-bold text-lg shadow-sm">
-            S
-          </div>
+          <img
+            src="/salon_logo.png"
+            alt="AK Hair Studio Logo"
+            className="w-10 h-10 rounded-xl object-cover shadow-xs border border-[#585990]/20"
+          />
           <div>
             <h1 className="font-bold text-lg text-[#585990] tracking-tight leading-tight">
               {title}
             </h1>
             <span className="text-[11px] text-[#46464f] font-medium block truncate max-w-[180px] sm:max-w-xs">
-              {user?.salonName || 'Serene Salon & Studio'}
+              {user?.salonName || 'AK Hair Studio'}
             </span>
           </div>
         </div>

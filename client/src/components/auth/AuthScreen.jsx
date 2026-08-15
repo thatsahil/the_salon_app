@@ -32,7 +32,7 @@ export function AuthScreen({ onLoginSuccess }) {
       const API_BASE = rawApiUrl.endsWith('/') ? rawApiUrl.slice(0, -1) : rawApiUrl;
 
       const bodyData = isSignUp
-        ? { name, email, password, salonName: salonName || 'Serene Salon & Studio' }
+        ? { name, email, password, salonName: salonName || 'AK Hair Studio' }
         : { email, password };
 
       const res = await fetch(`${API_BASE}${endpoint}`, {
@@ -73,11 +73,13 @@ export function AuthScreen({ onLoginSuccess }) {
       <div className="w-full max-w-md bg-white/95 backdrop-blur-2xl rounded-3xl p-6 sm:p-8 shadow-2xl border border-white/20 relative z-10 animate-fade-in">
         {/* Logo / Header */}
         <div className="flex flex-col items-center text-center mb-6">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#585990] to-[#8b8cc7] text-white flex items-center justify-center shadow-lg shadow-[#585990]/30 mb-3 border border-white/40">
-            <Scissors className="w-7 h-7" />
-          </div>
+          <img
+            src="/salon_logo.png"
+            alt="AK Hair Studio Logo"
+            className="w-16 h-16 rounded-2xl object-cover shadow-lg shadow-[#585990]/30 mb-3 border border-white/40"
+          />
           <h1 className="text-2xl font-extrabold text-[#0b1c30] tracking-tight">
-            Salon Workspace
+            AK Hair Studio
           </h1>
           <p className="text-xs text-[#46464f] mt-1 font-medium">
             {isSignUp
